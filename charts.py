@@ -48,15 +48,25 @@ def page_2():
     else:
         title = 'Histogram of Age for Male, Female' 
 
+    # Create a title for the selected years of experience
+    experience_min, experience_max = experience_slider
+    if experience_min == 0 and experience_max == 16:
+        experience_title = "All Years of Experience"
+    else:
+        experience_title = f"Years of Experience: {experience_min} to {experience_max}"
+
+    # Combine titles
+    title += f" | {experience_title}"
+
     # Filter by years of experience using the new list column
-    df = df[df['experience_list'].apply(lambda x: any(year in range(experience_slider[0], experience_slider[1] + 1) for year in x))]
+    df = df[df['experience_list'].apply(lambda x: any(year in range(experience_min, experience_max + 1) for year in x))]
 
     fig, ax = plt.subplots()
     df['age'].hist(bins=10, alpha=0.7, ax=ax)
     
     ax.set_xlabel('User age')  # Use ax to set labels
     ax.set_ylabel('Number of users in age range')
-    ax.set_title(title)
+    ax.set_title(title)  # Updated title
 
     # Display the plot in Streamlit
     st.pyplot(fig)
