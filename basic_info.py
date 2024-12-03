@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import missingno as msno
 from pathlib import Path
-st.set_page_config(layout="wide")
+st.set_page_config(layout="centered")
 
 csv_file_path = Path('35__welcome_survey_cleaned.csv')
 df = pd.read_csv(csv_file_path, sep=';')
