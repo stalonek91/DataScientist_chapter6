@@ -15,13 +15,27 @@ def convert_experience_to_list(exp_str):
             return [int(exp_str)]  # Handle single values
     return [0]  # Treat NaN or non-string as [0]
 
+def convert_age_to_numeric(age_str):
+    if isinstance(age_str, str):
+        if age_str.startswith(">="):
+            return 65  # Treat ">=65" as 65
+        elif age_str.startswith("<"):
+            return 0  # Treat "<18" as 0
+        elif "-" in age_str:
+            start, end = map(int, age_str.split("-"))
+            return (start + end) / 2  # Use the average of the range
+        elif age_str == "unknown":
+            return None  # Treat "unknown" as NaN
+    return None  # Treat any other non-string as NaN
+
 def page_2():
 
     csv_file_path = Path('35__welcome_survey_cleaned.csv')
     df = pd.read_csv(csv_file_path, sep=';')
 
-    age_tab, hobby_tab, prof_tab = st.tabs(
-        ["Participant Age", "Participant Hobby", "Participant career"
+    age_tab, hobby_tab, prof_tab, num_tab = st.tabs(
+        ["Participant Age", "Participant Hobby", "Participant career", 
+         "Numeric data "
                                             ])
 
     with age_tab:
@@ -62,6 +76,14 @@ def page_2():
 
         # Create a new column for years of experience as lists
         df['experience_list'] = df['years_of_experience'].apply(convert_experience_to_list)
+
+        # Apply the conversion function to create a new numeric age column
+        df['numeric_age'] = df['age'].apply(convert_age_to_numeric)
+
+        # Create age bins based on the new numeric age column
+        age_bins = [0, 18, 25, 35, 45, 55, 65, 100]  # Define your age ranges
+        age_labels = ['0-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+        df['age_group'] = pd.cut(df['numeric_age'], bins=age_bins, labels=age_labels, right=False)
 
         st.title(":man-raising-hand: Participants survey data")
         st.write("USE THE SIDEBAR FOR ADDITIONAL FILTERS")
@@ -108,12 +130,31 @@ def page_2():
         # Display the plot in Streamlit
         st.pyplot(fig)
         
-        st.write("Sample of data")
 
-        st.dataframe(df.sample(n=min(10, len(df))))
+
+        # Create a summary DataFrame based on selected filters
+        summary_data = df.groupby(['age']).agg(
+            Male=('gender', lambda x: (x == 0).sum()),  # Count males
+            Female=('gender', lambda x: (x == 1).sum()),  # Count females
+            Cat=('fav_animals', lambda x: (x == 'Koty').sum()),  # Count for 'Koty'
+            Dog=('fav_animals', lambda x: (x == 'Psy').sum()),  # Count for 'Psy'
+            Other=('fav_animals', lambda x: (x == 'Inne').sum()),  # Count for 'Inne'
+            No_Favorite=('fav_animals', lambda x: (x == 'Brak ulubionych').sum()),  # Count for 'Brak ulubionych'
+            Both=('fav_animals', lambda x: (x == 'Koty i Psy').sum()),  # Count for 'Koty i Psy'
+            Podstawowe=('edu_level', lambda x: (x == 'Podstawowe').sum()),  # Count for 'Podstawowe'
+            Srednie=('edu_level', lambda x: (x == 'Srednie').sum()),  # Count for 'Srednie'
+            Wyzsze=('edu_level', lambda x: (x == 'Wyzsze').sum())  # Count for 'Wyzsze'
+        ).reset_index()
+
+        # Display the summary DataFrame
+        st.write("Summary Data:")
+        st.dataframe(summary_data)
 
 
     with hobby_tab:
+
+        st.title(":table_tennis_paddle_and_ball: Hobbies")
+
         # Extract hobby-related columns
         hobby_columns = ["hobby_art", "hobby_books", "hobby_movies", 
                         "hobby_other", "hobby_sport", "hobby_video_games"]
@@ -121,10 +162,17 @@ def page_2():
         # Initialize the title
         hobby_title = 'Participants by Hobby'
 
+
+
+
         filter_option = st.radio(
-            "Select filter type",
-            ("Custom Filters", "Gender Filter")
-        )
+                "Select filter type",
+                ("Custom Filters", "Gender Filter", "Age Filter")
+            )
+
+                
+
+
 
         if filter_option == 'Custom Filters':
 
@@ -165,6 +213,8 @@ def page_2():
             st.pyplot(fig)
 
         elif filter_option == 'Gender Filter':
+
+
             # Filter out NaN values in the gender column
             df_filtered = df[df['gender'].notna()]
 
@@ -181,6 +231,19 @@ def page_2():
             fig, ax = plt.subplots(figsize=(10, 6))
             hobby_counts_gender.plot(kind='barh', stacked=True, ax=ax, color=["grey", "silver"])  # Stacked horizontal bar plot
             ax.set_title(hobby_title, fontsize=16)  # Updated title
+            ax.set_xlabel("Number of Participants")
+            ax.set_ylabel("Hobby")
+
+            st.pyplot(fig)
+
+        elif filter_option == 'Age Filter':
+            # Calculate hobby counts split by age groups
+            hobby_counts_age = df.groupby('age_group')[hobby_columns].sum().T  # Transpose for easier plotting
+            
+            # Plot
+            fig, ax = plt.subplots(figsize=(10, 6))
+            hobby_counts_age.plot(kind='barh', stacked=True, ax=ax, color=sns.color_palette("coolwarm", len(age_labels)))  # Stacked horizontal bar plot
+            ax.set_title('Participants by Hobby and Age Group', fontsize=16)  # Updated title
             ax.set_xlabel("Number of Participants")
             ax.set_ylabel("Hobby")
 

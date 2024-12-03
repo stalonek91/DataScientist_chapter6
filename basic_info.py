@@ -34,8 +34,7 @@ with t1:
     st.dataframe(df.columns)
 
 with t2:
-    col1, col2 = st.columns([2,1])
-    with col1:
+
         missing_columns_df = df[df.columns[df.isnull().any()]]
 
         # Streamlit App Title
@@ -49,7 +48,7 @@ with t2:
         # Render the plot in Streamlit
         st.pyplot(fig)
 
-    with col2:
+ 
         missing_count = df.isnull().sum()
 
         # Compute the percentage of missing values per column
