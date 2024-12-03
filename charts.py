@@ -3,6 +3,9 @@ import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
 import seaborn as sns
+import plotly.express as px
+
+
 
 def convert_experience_to_list(exp_str):
     if isinstance(exp_str, str):
@@ -37,6 +40,70 @@ def page_2():
         ["Participant Age", "Participant Hobby", "Participant career", 
          "Numeric data "
                                             ])
+
+    with prof_tab:
+        prof_tab_1, prof_tab_2, prof_tab_3 = st.tabs(["Industries", "Motivation", "Learning style"])
+
+        with prof_tab_1:
+            industry_counts = df['industry'].value_counts().reset_index()
+            industry_counts.columns = ['industry', 'count']  # Rename columns for clarity
+
+            # Create the bar chart
+            fig = px.bar(
+                industry_counts,
+                y="industry",
+                x="count",
+                color="industry",  # Color by industry for distinct colors
+                title="Occurrences of Each Industry",
+                labels={"count": "Occurrences"},
+            )
+
+            fig.update_layout(
+                height=600,  
+                width=1000,
+                showlegend=False
+            )
+            
+
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+        with prof_tab_2:
+
+            columns_list = [
+            "motivation_career", 
+            "motivation_challenges", 
+            "motivation_creativity_and_innovation", 
+            "motivation_money_and_job", 
+            "motivation_personal_growth", 
+            "motivation_remote"
+        ]
+            
+            motivation_df = df[columns_list]
+            motivation_counts = motivation_df.sum().reset_index()
+            motivation_counts.columns = ['motivation', 'count']  # Rename columns for clarity
+
+            
+            fig = px.bar(
+                motivation_counts,
+                x="motivation",
+                y="count",
+                color="motivation",  # Assign a unique color for each motivation type
+                title="Bubble Chart of Motivations",
+                labels={"count": "Occurrences", "motivation": "Motivation"},
+                
+            )
+
+            fig.update_layout(xaxis=dict(showticklabels=False))
+            fig.update_layout(
+                height=600,  
+                width=1000,
+            )
+
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+           
+
+
 
     with age_tab:
         with st.sidebar:
@@ -166,7 +233,7 @@ def page_2():
 
 
         filter_option = st.radio(
-                "Select filter type",
+                "Select filter type - feel free to use sidebar filters also!",
                 ("Custom Filters", "Gender Filter", "Age Filter")
             )
 
@@ -205,10 +272,14 @@ def page_2():
 
             # Plot
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.barplot(y=hobby_counts.index, x=hobby_counts.values, ax=ax, palette="Blues_d")
-            ax.set_title(hobby_title, fontsize=16)  # Updated title
-            ax.set_xlabel("Number of Participants")
-            ax.set_ylabel("Hobby")
+            colors = sns.color_palette("Blues_d", len(hobby_counts))
+            sns.barplot(
+                y=hobby_counts.index,
+                x=hobby_counts.values,
+                ax=ax,
+                palette=colors  # Manually apply the colors
+            )
+
 
             st.pyplot(fig)
 
@@ -267,6 +338,16 @@ def page_2():
             ax.set_ylabel("Hobby")
 
             st.pyplot(fig)
+
+
+
+
+
+                   
+                    
+
+
+                
 
 
 
