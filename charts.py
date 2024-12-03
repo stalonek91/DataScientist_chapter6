@@ -212,6 +212,8 @@ def page_2():
 
             st.pyplot(fig)
 
+
+
         elif filter_option == 'Gender Filter':
 
 
