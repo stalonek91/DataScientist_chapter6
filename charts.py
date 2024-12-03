@@ -236,6 +236,15 @@ def page_2():
 
             st.pyplot(fig)
 
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(hobby_counts_gender, annot=True, fmt='d', cmap='Blues', ax=ax)  # Heatmap with annotations
+            ax.set_title('Participants by Hobby and Gender', fontsize=16)
+            ax.set_xlabel("Age Group")
+            ax.set_ylabel("Gender")
+
+            st.pyplot(fig)
+
         elif filter_option == 'Age Filter':
             # Calculate hobby counts split by age groups
             hobby_counts_age = df.groupby('age_group')[hobby_columns].sum().T  # Transpose for easier plotting
@@ -248,4 +257,14 @@ def page_2():
             ax.set_ylabel("Hobby")
 
             st.pyplot(fig)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            sns.heatmap(hobby_counts_age, annot=True, fmt='d', cmap='Blues', ax=ax)  # Heatmap with annotations
+            ax.set_title('Participants by Hobby and Age Group', fontsize=16)
+            ax.set_xlabel("Age Group")
+            ax.set_ylabel("Hobby")
+
+            st.pyplot(fig)
+
+
 
