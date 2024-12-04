@@ -36,77 +36,25 @@ def page_2():
     csv_file_path = Path('35__welcome_survey_cleaned.csv')
     df = pd.read_csv(csv_file_path, sep=';')
 
-    age_tab, hobby_tab, prof_tab, num_tab = st.tabs(
+    age_tab, hobby_tab, prof_tab, other_tab = st.tabs(
         ["Participant Age", "Participant Hobby", "Participant career", 
-         "Numeric data "
+         "Other"
                                             ])
 
-    with prof_tab:
-        prof_tab_1, prof_tab_2, prof_tab_3 = st.tabs(["Industries", "Motivation", "Learning style"])
-
-        with prof_tab_1:
-            industry_counts = df['industry'].value_counts().reset_index()
-            industry_counts.columns = ['industry', 'count']  # Rename columns for clarity
-
-            # Create the bar chart
-            fig = px.bar(
-                industry_counts,
-                y="industry",
-                x="count",
-                color="industry",  # Color by industry for distinct colors
-                title="Occurrences of Each Industry",
-                labels={"count": "Occurrences"},
-            )
-
-            fig.update_layout(
-                height=600,  
-                width=1000,
-                showlegend=False
-            )
+    
             
-
-            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
-
-        with prof_tab_2:
-
-            columns_list = [
-            "motivation_career", 
-            "motivation_challenges", 
-            "motivation_creativity_and_innovation", 
-            "motivation_money_and_job", 
-            "motivation_personal_growth", 
-            "motivation_remote"
-        ]
-            
-            motivation_df = df[columns_list]
-            motivation_counts = motivation_df.sum().reset_index()
-            motivation_counts.columns = ['motivation', 'count']  # Rename columns for clarity
-
-            
-            fig = px.bar(
-                motivation_counts,
-                x="motivation",
-                y="count",
-                color="motivation",  # Assign a unique color for each motivation type
-                title="Bubble Chart of Motivations",
-                labels={"count": "Occurrences", "motivation": "Motivation"},
-                
-            )
-
-            fig.update_layout(xaxis=dict(showticklabels=False))
-            fig.update_layout(
-                height=600,  
-                width=1000,
-            )
-
-            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
 
            
 
 
 
     with age_tab:
+
+        
+
         with st.sidebar:
+
+            st.write("Use following filters to every section")
             gender_options = ["Male", "Female"]
             gender_mapping = {"Male": 0, "Female": 1}
             selected_genders = st.multiselect(
@@ -153,7 +101,19 @@ def page_2():
         df['age_group'] = pd.cut(df['numeric_age'], bins=age_bins, labels=age_labels, right=False)
 
         st.title(":man-raising-hand: Participants survey data")
-        st.write("USE THE SIDEBAR FOR ADDITIONAL FILTERS")
+        with st.expander("Click to get brief overview of the data"):
+            st.write("""
+                    This dataset contains information about participants in a data science course, 
+                     capturing diverse aspects of their demographics, preferences, and motivations. 
+                     It includes 28 features, such as age, education level, and professional experience, 
+                     as well as personal interests like favorite animals, places, and hobbies. 
+                     Additionally, it explores participants' learning preferences, 
+                     ranging from online courses to personal projects, and their motivations, 
+                     including career growth and creativity. 
+                     This rich dataset provides an opportunity to analyze patterns and trends among 
+                     aspiring data scientists, offering insights into their backgrounds and aspirations.
+                     """)
+
 
         # Initialize the title
         title = 'Histogram of Age for:'
@@ -338,6 +298,228 @@ def page_2():
             ax.set_ylabel("Hobby")
 
             st.pyplot(fig)
+
+    with other_tab:
+
+        st.title(":dog2: Participants favourite pet, place and seasoning :salt:")
+        new_df = df[['fav_animals', 'fav_place', 'sweet_or_salty']]
+
+
+        # Apply filters to the DataFrame
+        filtered_df = df.copy()
+
+        # Filter by gender
+        if selected_genders:
+            numeric_genders = [gender_mapping[gender] for gender in selected_genders]
+            filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
+
+        # Filter by years of experience
+        experience_min, experience_max = experience_slider
+        filtered_df = filtered_df[filtered_df['experience_list'].apply(
+            lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
+        )]
+
+        # Filter by favorite animals
+        if selected_animals:
+            filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
+
+        # Filter by education levels
+        if selected_edu_levels:
+            filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
+
+        # Count values for each column in the filtered DataFrame
+        animal_counts = filtered_df['fav_animals'].value_counts().reset_index()
+        animal_counts.columns = ['fav_animals', 'count']
+
+        place_counts = filtered_df['fav_place'].value_counts().reset_index()
+        place_counts.columns = ['fav_place', 'count']
+
+        seasoning_counts = filtered_df['sweet_or_salty'].value_counts().reset_index()
+        seasoning_counts.columns = ['sweet_or_salty', 'count']
+
+        # Create bar charts
+        fig1 = px.bar(animal_counts, x='fav_animals', y='count', title='Favorite Animals')
+        st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
+
+        fig2 = px.bar(place_counts, x='fav_place', y='count', title='Favorite Places')
+        st.plotly_chart(fig2, theme="streamlit", use_container_width=True)
+
+        fig3 = px.bar(seasoning_counts, x='sweet_or_salty', y='count', title='Sweet or Salty Preference')
+        st.plotly_chart(fig3, theme="streamlit", use_container_width=True)
+
+
+
+    with prof_tab:
+        st.title(":female-student: Career & learning")
+        prof_tab_1, prof_tab_2, prof_tab_3 = st.tabs(["Industries", "Motivation", "Learning style"])
+
+        with prof_tab_1:
+
+            filtered_df = df.copy()
+
+            # Filter by gender
+            if selected_genders:
+                numeric_genders = [gender_mapping[gender] for gender in selected_genders]
+                filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
+
+            # Filter by years of experience
+            experience_min, experience_max = experience_slider
+            filtered_df = filtered_df[filtered_df['experience_list'].apply(
+                lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
+            )]
+
+            # Filter by favorite animals
+            if selected_animals:
+                filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
+
+            # Filter by education levels
+            if selected_edu_levels:
+                filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
+
+            
+
+            industry_counts = filtered_df['industry'].value_counts().reset_index()
+            industry_counts.columns = ['industry', 'count']  # Rename columns for clarity
+
+            
+
+            # Create the bar chart
+            fig = px.bar(
+                industry_counts,
+                y="industry",
+                x="count",
+                color="industry",  # Color by industry for distinct colors
+                title="Industry split of the participants",
+                labels={"count": "Occurrences"},
+            )
+
+            fig.update_layout(
+                height=600,  
+                width=1000,
+                showlegend=False
+            )
+            
+
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+        with prof_tab_2:
+
+            columns_list = [
+            "motivation_career", 
+            "motivation_challenges", 
+            "motivation_creativity_and_innovation", 
+            "motivation_money_and_job", 
+            "motivation_personal_growth", 
+            "motivation_remote"
+
+            
+        ]
+            filtered_df = df.copy()
+
+            # Filter by gender
+            if selected_genders:
+                numeric_genders = [gender_mapping[gender] for gender in selected_genders]
+                filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
+
+            # Filter by years of experience
+            experience_min, experience_max = experience_slider
+            filtered_df = filtered_df[filtered_df['experience_list'].apply(
+                lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
+            )]
+
+            # Filter by favorite animals
+            if selected_animals:
+                filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
+
+            # Filter by education levels
+            if selected_edu_levels:
+                filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
+
+            motivation_df = filtered_df[columns_list]
+            motivation_counts = motivation_df.sum().reset_index()
+            motivation_counts.columns = ['motivation', 'count']
+            motivation_counts = motivation_counts.sort_values(by="count", ascending=False)
+
+            
+            fig = px.bar(
+                motivation_counts,
+                x="motivation",
+                y="count",
+                color="motivation",  # Assign a unique color for each motivation type
+                title="Motivation of Data Science course",
+                labels={"count": "Occurrences", "motivation": "Motivation"},
+                
+            )
+
+            fig.update_layout(xaxis=dict(showticklabels=False))
+            fig.update_layout(
+                height=600,  
+                width=1000,
+            )
+
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+        with prof_tab_3:
+            
+                        
+            learning_columns = [
+                'learning_pref_books',
+                'learning_pref_chatgpt',
+                'learning_pref_offline_courses',
+                'learning_pref_online_courses',
+                'learning_pref_personal_projects',
+                'learning_pref_teaching',
+                'learning_pref_teamwork',
+                'learning_pref_workshops'
+            ]
+
+            filtered_df = df.copy()
+
+            # Filter by gender
+            if selected_genders:
+                numeric_genders = [gender_mapping[gender] for gender in selected_genders]
+                filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
+
+            # Filter by years of experience
+            experience_min, experience_max = experience_slider
+            filtered_df = filtered_df[filtered_df['experience_list'].apply(
+                lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
+            )]
+
+            # Filter by favorite animals
+            if selected_animals:
+                filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
+
+            # Filter by education levels
+            if selected_edu_levels:
+                filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
+            
+            learning_df = filtered_df[learning_columns]
+
+            
+            learning_counts = learning_df.sum().reset_index()
+            learning_counts.columns = ['learning_preference', 'count']  
+            learning_counts = learning_counts.sort_values(by="count", ascending=False)
+
+            
+            fig = px.bar(
+                learning_counts,
+                y="learning_preference",
+                x="count",
+                color="learning_preference", 
+                title="Learning prefference of the participants",
+                labels={"count": "Occurrences"},
+            )
+
+            fig.update_layout(
+                height=600,  
+                width=1000,
+                showlegend=False  
+            )
+
+            st.plotly_chart(fig, theme="streamlit", use_container_width=True)
+
+
 
 
 
