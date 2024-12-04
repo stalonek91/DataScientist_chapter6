@@ -88,7 +88,7 @@ def page_2():
 
         
         age_bins = [0, 18, 25, 35, 45, 55, 65, 100] 
-        age_labels = ['0-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
+        age_labels = ['<18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
         df['age_group'] = pd.cut(df['numeric_age'], bins=age_bins, labels=age_labels, right=False)
 
         st.title(":man-raising-hand: Participants survey data")
@@ -143,13 +143,15 @@ def page_2():
         title = title.strip()
 
         fig, ax = plt.subplots(figsize=(10, 5))  
-        sns.histplot(df['age'], bins=8, kde=False, ax=ax, alpha=0.7)  
+        sns.histplot(df['age_group'], discrete=True, ax=ax, alpha=0.7)  
 
         ax.set_xlabel('User Age')
         ax.set_ylabel('Number of Users in Age Range')
         ax.set_title(title)
 
-        
+        ax.set_xticks(range(len(age_labels)))
+        ax.set_xticklabels(age_labels)
+
         st.pyplot(fig)
         
 
