@@ -6,6 +6,11 @@ import missingno as msno
 from pathlib import Path
 st.set_page_config(layout="centered")
 
+"""
+Chcialem stworzyc st.page poswiecona datascientistowi z podstawowymi informacji na temat DFa ale pozniej
+odpuscilem i skupilem sie na faktycznym zadaniu. Postanowilem zostawic, zeby utrzymac koncept stron.
+"""
+
 csv_file_path = Path('35__welcome_survey_cleaned.csv')
 df = pd.read_csv(csv_file_path, sep=';')
 
@@ -37,30 +42,30 @@ with t2:
 
         missing_columns_df = df[df.columns[df.isnull().any()]]
 
-        # Streamlit App Title
+       
         st.title("Missing Values Matrix (Filtered)")
 
-        # Create the nullity matrix and display it in Streamlit
+        
         fig, ax = plt.subplots(figsize=(12, 8))  # Create a figure
-        msno.matrix(missing_columns_df, ax=ax, sparkline=False)  # Generate missingno plot
-        ax.set_title("Missing Values Matrix (Filtered)", fontsize=16)  # Add title
+        msno.matrix(missing_columns_df, ax=ax, sparkline=False)  
+        ax.set_title("Missing Values Matrix (Filtered)", fontsize=16)  
 
-        # Render the plot in Streamlit
+        
         st.pyplot(fig)
 
  
         missing_count = df.isnull().sum()
 
-        # Compute the percentage of missing values per column
+        
         missing_percent = (missing_count / len(df)) * 100
 
-        # Create a DataFrame to display missing values and percentages
+    
         missing_summary = pd.DataFrame({
             "Missing Values Count": missing_count,
             "Missing Values (%)": missing_percent
         })
 
-        # Display the DataFrame in Streamlit
+        
         st.title("Missing Values Summary")
         st.dataframe(missing_summary)
 

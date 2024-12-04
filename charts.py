@@ -5,31 +5,34 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 
-
+# Funkcje do konwertowania zakresu doswiadczenia do INT tak by filtering mogl zadzialac
 
 def convert_experience_to_list(exp_str):
     if isinstance(exp_str, str):
         if exp_str.startswith(">="):
-            return [16]  # Treat ">=16" as [16]
+            return [16]  
         elif "-" in exp_str:
             start, end = map(int, exp_str.split("-"))
-            return list(range(start, end + 1))  # Create a list from start to end
+            return list(range(start, end + 1))  
         else:
-            return [int(exp_str)]  # Handle single values
-    return [0]  # Treat NaN or non-string as [0]
+            return [int(exp_str)]  
+    return [0]  
 
 def convert_age_to_numeric(age_str):
     if isinstance(age_str, str):
         if age_str.startswith(">="):
-            return 65  # Treat ">=65" as 65
+            return 65  
         elif age_str.startswith("<"):
-            return 0  # Treat "<18" as 0
+            return 0  
         elif "-" in age_str:
             start, end = map(int, age_str.split("-"))
-            return (start + end) / 2  # Use the average of the range
+            return (start + end) / 2  
         elif age_str == "unknown":
-            return None  # Treat "unknown" as NaN
-    return None  # Treat any other non-string as NaN
+            return None  
+    return None  
+
+
+#Definicja funkcji page_2 -> domyslnie miala byc jedna ze stron
 
 def page_2():
 
@@ -40,19 +43,12 @@ def page_2():
         ["Participant Age", "Participant Hobby", "Participant career", 
          "Other"
                                             ])
-
-    
-            
-
-           
-
-
-
     with age_tab:
 
-        
-
         with st.sidebar:
+
+
+            # Maping 0/1 na plec - mozna by to bylo zrobic w DFie bezposrednio ale wolalem sie pobawic
 
             st.write("Use following filters to every section")
             gender_options = ["Male", "Female"]
@@ -62,41 +58,36 @@ def page_2():
                 gender_options
             )
             
-            # New multiselect for favorite animals
+            #
             animal_options = ["Psy", "Koty", "Inne", "Brak ulubionych", "Koty i Psy"]
             selected_animals = st.multiselect(
                 "Select favorite animals",
                 animal_options
             )       
 
-            # New multiselect for education levels
+            
             edu_level_options = df['edu_level'].unique().tolist()  # Get unique education levels
             selected_edu_levels = st.multiselect(
                 "Select education levels",
                 edu_level_options
             )       
 
-            # Slider for years of experience
+            # Slider dla doswiadczenia
             experience_slider = st.slider(
                 "Select years of experience",
                 min_value=0,
                 max_value=16,
-                value=(0, 16),  # Default range
+                value=(0, 16),  
                 step=1
             )
 
-            
-
         
-
-        # Create a new column for years of experience as lists
+        
         df['experience_list'] = df['years_of_experience'].apply(convert_experience_to_list)
-
-        # Apply the conversion function to create a new numeric age column
         df['numeric_age'] = df['age'].apply(convert_age_to_numeric)
 
-        # Create age bins based on the new numeric age column
-        age_bins = [0, 18, 25, 35, 45, 55, 65, 100]  # Define your age ranges
+        
+        age_bins = [0, 18, 25, 35, 45, 55, 65, 100] 
         age_labels = ['0-17', '18-24', '25-34', '35-44', '45-54', '55-64', '65+']
         df['age_group'] = pd.cut(df['numeric_age'], bins=age_bins, labels=age_labels, right=False)
 
@@ -115,155 +106,146 @@ def page_2():
                      """)
 
 
-        # Initialize the title
+        # Zmienna title bedzie podmianiala na zywo tytul w glownym histogramie i dodawala inforamcje o filtrach
         title = 'Histogram of Age for:'
 
-        # Filter by gender and update the title
+       
+       #Filtry z sidebaru (kod sie powtarza w kazdej sekcji -> do usprawnienia i sprawdzenia czy da sie
+       #zredukowac duplikaty)
         if selected_genders:
-            title += '\n - ' + ', '.join(selected_genders)
+            title += '\n  ' + ', '.join(selected_genders)
             numeric_genders = [gender_mapping[gender] for gender in selected_genders]
             df = df[df['gender'].isin(numeric_genders)]
         else:
-            title += '\n - Male, Female'  # Default if no gender selected
+            title += '\n  Male, Female'  
 
-        # Create a title for the selected years of experience
+        
         experience_min, experience_max = experience_slider
         experience_title = "All Years of Experience" if (experience_min == 0 and experience_max == 16) else f"Years of Experience: {experience_min} to {experience_max}"
-        title += '\n - ' + experience_title
+        title += '\n  ' + experience_title
 
-        # Filter by years of experience using the new list column
+        
         df = df[df['experience_list'].apply(lambda x: any(year in range(experience_min, experience_max + 1) for year in x))]
 
-        # New filtering based on selected favorite animals
+        
         if selected_animals:
             title += '\n - Favorite animal: ' + ', '.join(selected_animals)
             df = df[df['fav_animals'].isin(selected_animals)]
 
-        # New filtering based on selected education levels
+        
         if selected_edu_levels:
             title += '\n - Education level: ' + ', '.join(selected_edu_levels)
             df = df[df['edu_level'].isin(selected_edu_levels)]
 
-        # Remove the last newline character for cleaner output
+        
+
+        # Histogram
         title = title.strip()
 
-        fig, ax = plt.subplots()
-        sns.histplot(df['age'], bins=10, kde=False, ax=ax, alpha=0.7)
-        
-        ax.set_xlabel('User age')  # Use ax to set labels
-        ax.set_ylabel('Number of users in age range')
-        ax.set_title(title)  # Updated title
+        fig, ax = plt.subplots(figsize=(10, 5))  
+        sns.histplot(df['age'], bins=8, kde=False, ax=ax, alpha=0.7)  
 
-        # Display the plot in Streamlit
+        ax.set_xlabel('User Age')
+        ax.set_ylabel('Number of Users in Age Range')
+        ax.set_title(title)
+
+        
         st.pyplot(fig)
         
 
 
-        # Create a summary DataFrame based on selected filters
+        # Summary Data sekcja: Kazda kolumna policzona tak by mozna bylo stworzyc agregacyjny DF z podsumowaniem.
+        # Summary data jest na biezaco akutalizowany per filter
+
         summary_data = df.groupby(['age']).agg(
-            Male=('gender', lambda x: (x == 0).sum()),  # Count males
-            Female=('gender', lambda x: (x == 1).sum()),  # Count females
-            Cat=('fav_animals', lambda x: (x == 'Koty').sum()),  # Count for 'Koty'
-            Dog=('fav_animals', lambda x: (x == 'Psy').sum()),  # Count for 'Psy'
-            Other=('fav_animals', lambda x: (x == 'Inne').sum()),  # Count for 'Inne'
-            No_Favorite=('fav_animals', lambda x: (x == 'Brak ulubionych').sum()),  # Count for 'Brak ulubionych'
-            Both=('fav_animals', lambda x: (x == 'Koty i Psy').sum()),  # Count for 'Koty i Psy'
-            Podstawowe=('edu_level', lambda x: (x == 'Podstawowe').sum()),  # Count for 'Podstawowe'
-            Srednie=('edu_level', lambda x: (x == 'Srednie').sum()),  # Count for 'Srednie'
-            Wyzsze=('edu_level', lambda x: (x == 'Wyzsze').sum())  # Count for 'Wyzsze'
+            Male=('gender', lambda x: (x == 0).sum()),  
+            Female=('gender', lambda x: (x == 1).sum()),  
+            Cat=('fav_animals', lambda x: (x == 'Koty').sum()),  
+            Dog=('fav_animals', lambda x: (x == 'Psy').sum()),  
+            Other=('fav_animals', lambda x: (x == 'Inne').sum()), 
+            No_Favorite=('fav_animals', lambda x: (x == 'Brak ulubionych').sum()),  
+            Both=('fav_animals', lambda x: (x == 'Koty i Psy').sum()),  
+            Podstawowe=('edu_level', lambda x: (x == 'Podstawowe').sum()),  
+            Srednie=('edu_level', lambda x: (x == 'Srednie').sum()),  
+            Wyzsze=('edu_level', lambda x: (x == 'Wyzsze').sum())  
         ).reset_index()
 
-        # Display the summary DataFrame
+        
         st.write("Summary Data:")
-        st.dataframe(summary_data)
+        st.dataframe(summary_data, hide_index=True)
 
 
     with hobby_tab:
 
         st.title(":table_tennis_paddle_and_ball: Hobbies")
 
-        # Extract hobby-related columns
         hobby_columns = ["hobby_art", "hobby_books", "hobby_movies", 
                         "hobby_other", "hobby_sport", "hobby_video_games"]
 
-        # Initialize the title
         hobby_title = 'Participants by Hobby'
-
-
-
 
         filter_option = st.radio(
                 "Select filter type - feel free to use sidebar filters also!",
                 ("Custom Filters", "Gender Filter", "Age Filter")
             )
 
-                
-
-
-
         if filter_option == 'Custom Filters':
-
-            # Apply the same filtering as in the histogram
-            # Filter by gender
+            #Filtry z sidebaru
             if selected_genders:
                 numeric_genders = [gender_mapping[gender] for gender in selected_genders]
                 df_filtered = df[df['gender'].isin(numeric_genders)]
                 hobby_title += '\n - Gender: ' + ', '.join(selected_genders)
 
             else:
-                df_filtered = df  # No gender filter applied
+                df_filtered = df  
 
-            # Filter by years of experience
+            
             df_filtered = df_filtered[df_filtered['experience_list'].apply(lambda x: any(year in range(experience_min, experience_max + 1) for year in x))]
             hobby_title += f' \n- Experience: {experience_min} to {experience_max}'
 
-            # Filter by favorite animals
+           
             if selected_animals:
                 df_filtered = df_filtered[df_filtered['fav_animals'].isin(selected_animals)]
                 hobby_title += ' \n- Favorite Animals: ' + ', '.join(selected_animals)
 
-            # Filter by education levels
+            
             if selected_edu_levels:
                 df_filtered = df_filtered[df_filtered['edu_level'].isin(selected_edu_levels)]
                 hobby_title += ' \n- Education Levels: ' + ', '.join(selected_edu_levels)
 
-            # Calculate hobby counts
-            hobby_counts = df_filtered[hobby_columns].sum()  # Use filtered DataFrame
+            
+            hobby_counts = df_filtered[hobby_columns].sum()  
 
-            # Plot
+            
             fig, ax = plt.subplots(figsize=(10, 6))
             colors = sns.color_palette("Blues_d", len(hobby_counts))
             sns.barplot(
                 y=hobby_counts.index,
                 x=hobby_counts.values,
                 ax=ax,
-                palette=colors  # Manually apply the colors
+                palette=colors  
             )
-
-
             st.pyplot(fig)
-
 
 
         elif filter_option == 'Gender Filter':
 
-
-            # Filter out NaN values in the gender column
+            
             df_filtered = df[df['gender'].notna()]
 
-            # Create a copy of the main DataFrame for gender
+            
             df_gender = df.copy()
 
-            # Replace numeric gender values with text labels
+            
             df_gender['gender'] = df_gender['gender'].map({0: "Male", 1: "Female"})
 
-            # Calculate hobby counts split by gender
-            hobby_counts_gender = df_gender.groupby('gender')[hobby_columns].sum().T  # Transpose for easier plotting
+            # Uzyte transpose do lepszej reprezentacji per hobby .T
+            hobby_counts_gender = df_gender.groupby('gender')[hobby_columns].sum().T  
             
-            # Plot
+            
             fig, ax = plt.subplots(figsize=(10, 6))
-            hobby_counts_gender.plot(kind='barh', stacked=True, ax=ax, color=["grey", "silver"])  # Stacked horizontal bar plot
-            ax.set_title(hobby_title, fontsize=16)  # Updated title
+            hobby_counts_gender.plot(kind='barh', stacked=True, ax=ax, color=["grey", "silver"])  
+            ax.set_title(hobby_title, fontsize=16)  
             ax.set_xlabel("Number of Participants")
             ax.set_ylabel("Hobby")
 
@@ -271,7 +253,7 @@ def page_2():
 
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(hobby_counts_gender, annot=True, fmt='d', cmap='Blues', ax=ax)  # Heatmap with annotations
+            sns.heatmap(hobby_counts_gender, annot=True, fmt='d', cmap='Blues', ax=ax) 
             ax.set_title('Participants by Hobby and Gender', fontsize=16)
             ax.set_xlabel("Age Group")
             ax.set_ylabel("Gender")
@@ -279,20 +261,20 @@ def page_2():
             st.pyplot(fig)
 
         elif filter_option == 'Age Filter':
-            # Calculate hobby counts split by age groups
-            hobby_counts_age = df.groupby('age_group')[hobby_columns].sum().T  # Transpose for easier plotting
+            
+            hobby_counts_age = df.groupby('age_group')[hobby_columns].sum().T  
             
             # Plot
             fig, ax = plt.subplots(figsize=(10, 6))
-            hobby_counts_age.plot(kind='barh', stacked=True, ax=ax, color=sns.color_palette("coolwarm", len(age_labels)))  # Stacked horizontal bar plot
-            ax.set_title('Participants by Hobby and Age Group', fontsize=16)  # Updated title
+            hobby_counts_age.plot(kind='barh', stacked=True, ax=ax, color=sns.color_palette("coolwarm", len(age_labels)))  
+            ax.set_title('Participants by Hobby and Age Group', fontsize=16)  
             ax.set_xlabel("Number of Participants")
             ax.set_ylabel("Hobby")
 
             st.pyplot(fig)
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            sns.heatmap(hobby_counts_age, annot=True, fmt='d', cmap='Blues', ax=ax)  # Heatmap with annotations
+            sns.heatmap(hobby_counts_age, annot=True, fmt='d', cmap='Blues', ax=ax)  
             ax.set_title('Participants by Hobby and Age Group', fontsize=16)
             ax.set_xlabel("Age Group")
             ax.set_ylabel("Hobby")
@@ -305,29 +287,29 @@ def page_2():
         new_df = df[['fav_animals', 'fav_place', 'sweet_or_salty']]
 
 
-        # Apply filters to the DataFrame
+        
         filtered_df = df.copy()
 
-        # Filter by gender
+        #Filtry z sidebaru
         if selected_genders:
             numeric_genders = [gender_mapping[gender] for gender in selected_genders]
             filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
 
-        # Filter by years of experience
+        
         experience_min, experience_max = experience_slider
         filtered_df = filtered_df[filtered_df['experience_list'].apply(
             lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
         )]
 
-        # Filter by favorite animals
+        
         if selected_animals:
             filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
 
-        # Filter by education levels
+        
         if selected_edu_levels:
             filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
 
-        # Count values for each column in the filtered DataFrame
+        
         animal_counts = filtered_df['fav_animals'].value_counts().reset_index()
         animal_counts.columns = ['fav_animals', 'count']
 
@@ -337,7 +319,7 @@ def page_2():
         seasoning_counts = filtered_df['sweet_or_salty'].value_counts().reset_index()
         seasoning_counts.columns = ['sweet_or_salty', 'count']
 
-        # Create bar charts
+        
         fig1 = px.bar(animal_counts, x='fav_animals', y='count', title='Favorite Animals')
         st.plotly_chart(fig1, theme="streamlit", use_container_width=True)
 
@@ -357,22 +339,22 @@ def page_2():
 
             filtered_df = df.copy()
 
-            # Filter by gender
+            #Filtry z sidebaru
             if selected_genders:
                 numeric_genders = [gender_mapping[gender] for gender in selected_genders]
                 filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
 
-            # Filter by years of experience
+            
             experience_min, experience_max = experience_slider
             filtered_df = filtered_df[filtered_df['experience_list'].apply(
                 lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
             )]
 
-            # Filter by favorite animals
+            
             if selected_animals:
                 filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
 
-            # Filter by education levels
+            
             if selected_edu_levels:
                 filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
 
@@ -383,12 +365,12 @@ def page_2():
 
             
 
-            # Create the bar chart
+           
             fig = px.bar(
                 industry_counts,
                 y="industry",
                 x="count",
-                color="industry",  # Color by industry for distinct colors
+                color="industry",  
                 title="Industry split of the participants",
                 labels={"count": "Occurrences"},
             )
@@ -416,22 +398,22 @@ def page_2():
         ]
             filtered_df = df.copy()
 
-            # Filter by gender
+            #Filtry z sidebaru
             if selected_genders:
                 numeric_genders = [gender_mapping[gender] for gender in selected_genders]
                 filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
 
-            # Filter by years of experience
+            
             experience_min, experience_max = experience_slider
             filtered_df = filtered_df[filtered_df['experience_list'].apply(
                 lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
             )]
 
-            # Filter by favorite animals
+            
             if selected_animals:
                 filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
 
-            # Filter by education levels
+            
             if selected_edu_levels:
                 filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
 
@@ -445,7 +427,7 @@ def page_2():
                 motivation_counts,
                 x="motivation",
                 y="count",
-                color="motivation",  # Assign a unique color for each motivation type
+                color="motivation",  
                 title="Motivation of Data Science course",
                 labels={"count": "Occurrences", "motivation": "Motivation"},
                 
@@ -475,22 +457,22 @@ def page_2():
 
             filtered_df = df.copy()
 
-            # Filter by gender
+            
             if selected_genders:
                 numeric_genders = [gender_mapping[gender] for gender in selected_genders]
                 filtered_df = filtered_df[filtered_df['gender'].isin(numeric_genders)]
 
-            # Filter by years of experience
+            
             experience_min, experience_max = experience_slider
             filtered_df = filtered_df[filtered_df['experience_list'].apply(
                 lambda x: any(year in range(experience_min, experience_max + 1) for year in x)
             )]
 
-            # Filter by favorite animals
+            
             if selected_animals:
                 filtered_df = filtered_df[filtered_df['fav_animals'].isin(selected_animals)]
 
-            # Filter by education levels
+            
             if selected_edu_levels:
                 filtered_df = filtered_df[filtered_df['edu_level'].isin(selected_edu_levels)]
             
